@@ -207,3 +207,12 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+
+# Data files - never commit raw personal data
+data/raw/
+data/annotated/
+
+# Environment
+.env
+venv/
