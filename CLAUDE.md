@@ -4,18 +4,19 @@ Project memory loaded automatically by Claude Code. Update this file when conven
 
 ## What this project is
 
-Bidirectional Egyptian-Arabic translator that converts between three forms of the same language:
+Bidirectional Egyptian-Arabic translator that converts between two forms of the same language:
 
 - **Franco** — Egyptian Arabic written in Latin script with digit substitutions (`3yzak tigi bukra`)
 - **Arabic** — standard Egyptian Arabic script (`عايزك تيجي بكره`)
-- **English** — natural meaning translation (`I want you to come tomorrow`)
 
-A **single multilingual Seq2Seq model** handles all six direction-pairs via prefix tokens (`<2ar>`, `<2en>`, `<2franco>`).
+A **single Seq2Seq model** handles both directions via prefix tokens (`<2ar>` for Franco→Arabic, `<2franco>` for Arabic→Franco).
+
+> **Scope note (2026-05-14):** English translation was originally planned as a third target but was dropped after an empirical baseline (`experiments/01_arabic_to_english_baseline/`) showed pretrained MSA→EN models fail on ~40% of Egyptian colloquial sentences. See that folder's README for the full writeup.
 
 ## Why bidirectional matters
 
-- **Franco → AR/EN**: serves people who can read Arabic but get messages in Franco.
-- **AR → Franco**: serves the inverse — and exposes a Chrome-extension / typing-aid product angle for the MENA market.
+- **Franco → Arabic**: serves people who can read Arabic but receive messages written in Franco.
+- **Arabic → Franco**: serves the inverse — typing aid for users who can read Arabic but type faster in Latin script. Also the foundation for a Chrome-extension product angle for the MENA market.
 
 ## Stack
 
@@ -24,7 +25,7 @@ A **single multilingual Seq2Seq model** handles all six direction-pairs via pref
 | Python | 3.11.9 (venv) |
 | Data | pandas, numpy, openpyxl |
 | EDA | matplotlib, seaborn |
-| NLP/ML | transformers, torch, sentencepiece, datasets, accelerate, evaluate, sacrebleu |
+| NLP/ML | transformers, torch, sentencepiece, datasets, accelerate, sacrebleu, scikit-learn |
 | Scraping | google-api-python-client (YouTube), requests (Reddit) |
 | API | FastAPI (Phase 2f) |
 | Frontend | React (Phase 2f) |
@@ -41,7 +42,9 @@ franco/
 ├── notebooks/
 │   └── 01_eda.ipynb      ← Phase 1 EDA
 ├── src/
-│   └── data_collection/  ← scrapers + parsers + auto_translate
+│   └── data_collection/  ← scrapers + parsers
+├── experiments/
+│   └── 01_arabic_to_english_baseline/  ← archived English experiment + writeup
 ├── docs/
 │   └── annotation_guidelines.md
 ├── .env                  ← gitignored — API keys live here
@@ -60,9 +63,9 @@ franco/
 
 ## Data conventions
 
-- **Three-column parallel format**: `franco | arabic | english` — every annotated row carries all three forms after Phase 2a.
-- **Quality flags**: rows produced by auto-translation get `auto_en=true` so we can spot-check them separately from manually-verified rows.
+- **Two-column parallel format**: `franco | arabic` is the working training/eval set.
 - **No PII in any committed file**. WhatsApp data lives only in `data/raw/`.
+- Augmented / synthetic rows must carry a flag column (e.g. `source=synthetic`) so they can be filtered out for evaluation.
 
 ## Franco digit map (canonical)
 
@@ -80,10 +83,10 @@ franco/
 
 - [x] Phase 1 — Data collection (18,125 raw → 13,373 cleaned)
 - [x] Phase 1.5 — Manual annotation (445 / 489 sentences translated to Arabic)
-- [ ] **Phase 2a** — Auto-translate Arabic → English (in progress)
-- [ ] Phase 2b — Data augmentation (Franco spelling variants, rule-based AR→Franco generator, back-translation)
-- [ ] Phase 2c — Rule-based baseline + BLEU/chrF benchmark
-- [ ] Phase 2d — Fine-tune multilingual Seq2Seq (AraT5v2 or mT5) with prefix-token direction control
+- [x] Phase 2a — Tested Arabic→English baseline; dropped from scope (see `experiments/01_arabic_to_english_baseline/`)
+- [ ] **Phase 2b** — Data augmentation (Franco spelling variants, rule-based AR→Franco generator, back-translation)
+- [ ] Phase 2c — Rule-based Franco↔Arabic baseline + BLEU/chrF benchmark
+- [ ] Phase 2d — Fine-tune AR-aware Seq2Seq (AraT5v2 or AraBART) with `<2ar>`/`<2franco>` prefix tokens
 - [ ] Phase 2e — Publish model card to HuggingFace Hub
 - [ ] Phase 2f — FastAPI backend + React frontend + HF Spaces deploy
 
@@ -105,7 +108,12 @@ python -m venv venv
 pip install -r requirements.txt
 
 # Run a script (module form)
-python -m src.data_collection.auto_translate
+python -m src.data_collection.youtube_scraper
+
+# HuggingFace cache must live on an ASCII-only path on this machine.
+# The username folder contains non-ASCII characters which break model file
+# resolution. Set this env var before running any transformers code:
+$env:HF_HOME = "C:\hf_cache"
 
 # Tests
 pytest tests/ -v

@@ -1,7 +1,7 @@
 # Franco Translator 🇪🇬
 
-> Automatically convert Egyptian Franco (Arabic written in Latin script) 
-> to Arabic and English using fine-tuned NLP models.
+> Bidirectional translator between Egyptian Franco (Arabic written in Latin script)
+> and standard Arabic, powered by a fine-tuned Seq2Seq model.
 
 [![Python](https://img.shields.io/badge/Python-3.11-blue)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110-teal)](https://fastapi.tiangolo.com)
@@ -10,38 +10,48 @@
 
 ## What is Franco?
 
-Franco (فرانكو) is how millions of Egyptians write Arabic online — 
+Franco (فرانكو) is how millions of Egyptians write Arabic online —
 using Latin letters and digits to represent Arabic sounds:
 
-| Franco | Arabic | English |
-|--------|--------|---------|
-| `3yzak tigi bukra` | عايزك تيجي بكره | I want you to come tomorrow |
-| `el mawdo3 7elw awy` | الموضوع حلو أوي | The topic is really great |
-| `5alas mesh moshkela` | خلاص مش مشكلة | It's fine, no problem |
+| Franco | Arabic |
+|--------|--------|
+| `3yzak tigi bukra` | عايزك تيجي بكره |
+| `el mawdo3 7elw awy` | الموضوع حلو أوي |
+| `5alas mesh moshkela` | خلاص مش مشكلة |
 
-No two people write it the same way. That's what makes it an 
+No two people write it the same way. That's what makes it an
 interesting NLP challenge.
 
+> An earlier scope included English translation as a third target. After an empirical
+> baseline (`experiments/01_arabic_to_english_baseline/`) showed that off-the-shelf
+> MSA→EN models fail on ~40% of Egyptian colloquial sentences, English was dropped
+> to focus the product on the actual user need: converting between Franco and Arabic.
+
 ## Project Architecture
-Franco text (input)
-↓
-Preprocessing & normalization
-↓
-Fine-tuned Seq2Seq model (HuggingFace)
-↓
-Arabic output  +  English output
-↓
-FastAPI backend  →  React web app
+
+```
+Franco text  ──┐
+                ├──►  Fine-tuned Seq2Seq (AraT5 / AraBART)  ──►  Arabic text
+Arabic text  ──┘                  ▲                                │
+                                  └────────  same model  ◄─────────┘
+                                  (prefix tokens: <2ar> / <2franco>)
+                                                                 │
+                                                                 ▼
+                                              FastAPI backend  →  React web app
+```
 
 ## Roadmap
 
 - [x] Project setup & annotation guidelines
-- [ ] Dataset collection (target: 50,000 sentences)
-- [ ] EDA & baseline model
-- [ ] Fine-tuning transformer model
+- [x] Dataset collection (~18k raw → 13,373 cleaned Franco sentences)
+- [x] EDA + manual annotation (445 Franco↔Arabic pairs)
+- [x] Arabic→English baseline (dropped from scope after testing)
+- [ ] Data augmentation (Franco spelling variants + rule-based AR→Franco generator)
+- [ ] Rule-based Franco↔Arabic baseline + BLEU/chrF benchmark
+- [ ] Fine-tune Seq2Seq model
+- [ ] Publish to HuggingFace Hub with model card
 - [ ] FastAPI backend
-- [ ] React web app
-- [ ] Docker & deployment
+- [ ] React web app + HuggingFace Spaces deploy
 
 ## Dataset
 

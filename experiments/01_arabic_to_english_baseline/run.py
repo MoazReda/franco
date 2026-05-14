@@ -1,17 +1,19 @@
-"""Auto-translate Arabic annotations to English using a HuggingFace model.
+"""Arabic → English baseline experiment using Helsinki-NLP/opus-mt-ar-en.
+
+ARCHIVED — Egypt-dialect quality on this model was too low (~40% broken).
+The English direction was dropped from project scope. See README.md in this
+folder for the experiment writeup.
 
 Produces a 3-column parallel CSV (franco, arabic, english) plus an
 ``english_source`` column flagging whether each English value came from
-a human annotator or this auto-translation pass.
-
-Designed to be safe to re-run: existing rows in the output CSV are loaded
-and skipped, so a crash mid-job loses at most one checkpoint window.
+a human annotator or this auto-translation pass. Resume-safe.
 
 Example
 -------
-    python -m src.data_collection.auto_translate \
-        --input data/annotated/annotation_sheet.xlsx \
-        --output data/annotated/annotated_500.csv \
+    $env:HF_HOME = "C:\\hf_cache"
+    python experiments/01_arabic_to_english_baseline/run.py \\
+        --input data/annotated/annotation_sheet.xlsx \\
+        --output data/annotated/annotated_500.csv \\
         --batch-size 16
 """
 
