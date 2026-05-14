@@ -218,6 +218,9 @@ data/reports/
 .pip-install.log
 .auto-translate.log
 
+# Trained model checkpoints — too big for git; use HuggingFace Hub instead
+models/
+
 # Environment
 .env
 venv/
