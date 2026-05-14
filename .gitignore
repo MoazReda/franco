@@ -211,6 +211,12 @@ __marimo__/
 # Data files - never commit raw personal data
 data/raw/
 data/annotated/
+data/splits/
+data/reports/
+
+# Local HF cache and run logs
+.pip-install.log
+.auto-translate.log
 
 # Environment
 .env
