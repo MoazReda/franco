@@ -46,11 +46,16 @@ franco/
 │   ├── translator.py     ← rule-based Franco↔Arabic baseline
 │   ├── evaluation.py     ← BLEU / chrF / exact-match
 │   ├── data_utils.py     ← load + deterministic train/val/test split
-│   └── augmentation.py   ← Franco spelling-variant generator
+│   ├── augmentation.py   ← Franco spelling-variant generator
+│   └── training.py       ← AraT5 fine-tuning helpers
 ├── scripts/
 │   ├── prepare_splits.py
 │   ├── evaluate_baseline.py
-│   └── augment_train.py
+│   ├── augment_train.py
+│   └── evaluate_model.py
+├── notebooks/
+│   ├── 01_eda.ipynb
+│   └── 03_finetune_arat5.ipynb  ← Kaggle-ready training notebook
 ├── tests/
 │   ├── test_translator.py
 │   └── test_augmentation.py
@@ -100,7 +105,7 @@ franco/
 - [x] Phase 2a — Tested Arabic→English baseline; dropped from scope (see `experiments/01_arabic_to_english_baseline/`)
 - [x] Phase 2c — Rule-based Franco↔Arabic baseline + BLEU/chrF benchmark (see below)
 - [x] Phase 2b — Data augmentation (Franco spelling variants, ×5 multiplier)
-- [ ] **Phase 2d** — Fine-tune AR-aware Seq2Seq (AraT5v2 or AraBART) with `<2ar>`/`<2franco>` prefix tokens
+- [ ] **Phase 2d** — Fine-tune AraT5v2-base on Kaggle GPU (notebook ready, training pending)
 - [ ] Phase 2e — Publish model card to HuggingFace Hub
 - [ ] Phase 2f — FastAPI backend + React frontend + HF Spaces deploy
 
@@ -125,6 +130,33 @@ python scripts/evaluate_baseline.py --splits-dir <abs-path>
 Val / test are never augmented — that would invalidate evaluation.
 
 Current run: 356 training rows → **1,779 rows (×5 multiplier)**, 4 synthetic variants per source row. Transformations include digit↔letter swaps (3↔a, 7↔h), word-medial vowel drops, definite-article swap (el↔al), word joining/splitting, and final-vowel doubling. See `src/augmentation.py` for the full list.
+
+## Training (Phase 2d) — Kaggle workflow
+
+The trained model is too big for git (~1GB). Training happens on Kaggle GPU; the artifact lives on the HuggingFace Hub.
+
+**Setup once:**
+1. Upload `data/splits/{train_augmented.csv, val.csv, test.csv}` as a private Kaggle dataset called `franco-translator-data`.
+2. (Optional) Add a Kaggle Secret named `HF_TOKEN` with a HuggingFace write token.
+
+**Run:**
+1. Open `notebooks/03_finetune_arat5.ipynb` on Kaggle.
+2. Settings → Accelerator → GPU T4 x2 (or P100).
+3. Run All.
+4. Download `franco-translator-v1` from `/kaggle/working/` or set `PUSH_TO_HUB=True` to publish.
+
+**Architecture:** single AraT5v2-base model, bidirectional via prefix tokens:
+- `<2ar>` prepended → Franco→Arabic
+- `<2franco>` prepended → Arabic→Franco
+
+Both directions train jointly, doubling the effective training set per source row.
+
+**Eval after training** (locally with the downloaded checkpoint):
+```
+python scripts/evaluate_model.py --model models/franco-translator-v1 \
+    --splits-dir <abs-path-to-data/splits>
+```
+The script reports BLEU/chrF for both directions and the Δ against the rule-based baseline.
 
 ## Working agreements with Claude
 
