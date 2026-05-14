@@ -45,12 +45,15 @@ franco/
 │   ├── data_collection/  ← scrapers + parsers
 │   ├── translator.py     ← rule-based Franco↔Arabic baseline
 │   ├── evaluation.py     ← BLEU / chrF / exact-match
-│   └── data_utils.py     ← load + deterministic train/val/test split
+│   ├── data_utils.py     ← load + deterministic train/val/test split
+│   └── augmentation.py   ← Franco spelling-variant generator
 ├── scripts/
 │   ├── prepare_splits.py
-│   └── evaluate_baseline.py
+│   ├── evaluate_baseline.py
+│   └── augment_train.py
 ├── tests/
-│   └── test_translator.py
+│   ├── test_translator.py
+│   └── test_augmentation.py
 ├── experiments/
 │   └── 01_arabic_to_english_baseline/  ← archived English experiment + writeup
 ├── docs/
@@ -96,8 +99,8 @@ franco/
 - [x] Phase 1.5 — Manual annotation (445 / 489 sentences translated to Arabic)
 - [x] Phase 2a — Tested Arabic→English baseline; dropped from scope (see `experiments/01_arabic_to_english_baseline/`)
 - [x] Phase 2c — Rule-based Franco↔Arabic baseline + BLEU/chrF benchmark (see below)
-- [ ] **Phase 2b** — Data augmentation (Franco spelling variants, rule-based AR→Franco generator)
-- [ ] Phase 2d — Fine-tune AR-aware Seq2Seq (AraT5v2 or AraBART) with `<2ar>`/`<2franco>` prefix tokens
+- [x] Phase 2b — Data augmentation (Franco spelling variants, ×5 multiplier)
+- [ ] **Phase 2d** — Fine-tune AR-aware Seq2Seq (AraT5v2 or AraBART) with `<2ar>`/`<2franco>` prefix tokens
 - [ ] Phase 2e — Publish model card to HuggingFace Hub
 - [ ] Phase 2f — FastAPI backend + React frontend + HF Spaces deploy
 
@@ -115,6 +118,13 @@ Regenerate after any rule change:
 python scripts/prepare_splits.py --input <abs-path-to-xlsx> --output-dir <abs-path>
 python scripts/evaluate_baseline.py --splits-dir <abs-path>
 ```
+
+## Augmented training set
+
+`scripts/augment_train.py` generates spelling variants for the **train split only**.
+Val / test are never augmented — that would invalidate evaluation.
+
+Current run: 356 training rows → **1,779 rows (×5 multiplier)**, 4 synthetic variants per source row. Transformations include digit↔letter swaps (3↔a, 7↔h), word-medial vowel drops, definite-article swap (el↔al), word joining/splitting, and final-vowel doubling. See `src/augmentation.py` for the full list.
 
 ## Working agreements with Claude
 
