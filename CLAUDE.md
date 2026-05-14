@@ -42,11 +42,22 @@ franco/
 ├── notebooks/
 │   └── 01_eda.ipynb      ← Phase 1 EDA
 ├── src/
-│   └── data_collection/  ← scrapers + parsers
+│   ├── data_collection/  ← scrapers + parsers
+│   ├── translator.py     ← rule-based Franco↔Arabic baseline
+│   ├── evaluation.py     ← BLEU / chrF / exact-match
+│   └── data_utils.py     ← load + deterministic train/val/test split
+├── scripts/
+│   ├── prepare_splits.py
+│   └── evaluate_baseline.py
+├── tests/
+│   └── test_translator.py
 ├── experiments/
 │   └── 01_arabic_to_english_baseline/  ← archived English experiment + writeup
 ├── docs/
 │   └── annotation_guidelines.md
+├── data/
+│   ├── splits/           ← gitignored, derived from annotation_sheet.xlsx
+│   └── reports/          ← gitignored, baseline predictions
 ├── .env                  ← gitignored — API keys live here
 └── requirements.txt
 ```
@@ -84,11 +95,26 @@ franco/
 - [x] Phase 1 — Data collection (18,125 raw → 13,373 cleaned)
 - [x] Phase 1.5 — Manual annotation (445 / 489 sentences translated to Arabic)
 - [x] Phase 2a — Tested Arabic→English baseline; dropped from scope (see `experiments/01_arabic_to_english_baseline/`)
-- [ ] **Phase 2b** — Data augmentation (Franco spelling variants, rule-based AR→Franco generator, back-translation)
-- [ ] Phase 2c — Rule-based Franco↔Arabic baseline + BLEU/chrF benchmark
+- [x] Phase 2c — Rule-based Franco↔Arabic baseline + BLEU/chrF benchmark (see below)
+- [ ] **Phase 2b** — Data augmentation (Franco spelling variants, rule-based AR→Franco generator)
 - [ ] Phase 2d — Fine-tune AR-aware Seq2Seq (AraT5v2 or AraBART) with `<2ar>`/`<2franco>` prefix tokens
 - [ ] Phase 2e — Publish model card to HuggingFace Hub
 - [ ] Phase 2f — FastAPI backend + React frontend + HF Spaces deploy
+
+## Baseline numbers (rule-based, test split n=45, seed=42)
+
+These are the floor that the fine-tuned Seq2Seq must beat:
+
+| Direction | BLEU | chrF | Exact-match |
+|-----------|------|------|-------------|
+| Franco → Arabic | 3.94 | 33.90 | 0% |
+| Arabic → Franco | 15.38 | 42.52 | 0% |
+
+Regenerate after any rule change:
+```
+python scripts/prepare_splits.py --input <abs-path-to-xlsx> --output-dir <abs-path>
+python scripts/evaluate_baseline.py --splits-dir <abs-path>
+```
 
 ## Working agreements with Claude
 
